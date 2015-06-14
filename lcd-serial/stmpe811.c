@@ -17,6 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
 #include <stdint.h>
+#include <stdio.h>
 #include <libopencm3/stm32/i2c.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
@@ -25,57 +26,107 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "console.h"
 
 
+
 void stmpe811_i2c_init() {
 
 	rcc_periph_clock_enable(RCC_GPIOA);
+	//rcc_periph_clock_enable(RCC_I2C3);
 
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO8);
+	//gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
+	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+	//	      GPIO8);
+
+
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
+	gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO8);
 	gpio_set_af(GPIOA, GPIO_AF4, GPIO8);
-	//gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO8);
 
 	rcc_periph_clock_enable(RCC_GPIOC);
 
-	gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO9);
-	gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
-	//gpio_set_output_options(GPIOC, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO9);
+	//gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ,
+	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+	//	      GPIO9);
+	uint32_t reg = RCC_I2C3;
 
+	gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
+	//gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
+	gpio_set_output_options(GPIOC, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO9);
+	gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
+//i2c_peripheral_disable(I2C1);
 	rcc_periph_clock_enable(RCC_I2C3);
+	rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
+	rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);
+	//rcc_periph_reset_pulse(I2C3);
 	i2c_peripheral_disable(I2C3);
-	i2c_set_clock_frequency(I2C3, I2C_CR2_FREQ_36MHZ);
+	uint tmp = 0;
+
+	tmp = RCC_PLLCFGR & RCC_PLLCFGR_PLLSRC;
+	tmp = tmp >> 22;
+	printf("PLLSRC=%08X\r\n", tmp);
+	tmp = RCC_PLLCFGR & 0x3f; // & (0x2 << 0x6);
+	printf("PLLM=%08X\r\n", tmp);
+	tmp = RCC_PLLCFGR & 0x7FC0;
+	tmp = tmp >> 6;
+	printf("PLLN=%08X\r\n", tmp);
+	tmp = RCC_PLLCFGR & (0x2 << RCC_PLLCFGR_PLLP_SHIFT);
+	tmp = tmp >> RCC_PLLCFGR_PLLP_SHIFT;
+	printf("PLLP=%08X\r\n", tmp);
+	//RCC_CFGR_HPRE
+	tmp = RCC_CFGR & (0x2 << 0x2);
+	//tmp = tmp >> 2;
+	printf("SYSCLK=%08X\r\n", tmp);
+	tmp = RCC_CFGR & (RCC_CFGR_HPRE_MASK <<RCC_CFGR_HPRE_SHIFT);
+	tmp = tmp >> 4;
+	printf("HPRE=%08X\r\n", tmp); // 0x0 
+	tmp = RCC_CFGR & (RCC_CFGR_PPRE1_MASK <<RCC_CFGR_PPRE1_SHIFT);
+	tmp = tmp >> 10;
+	printf("PPRE1=%08X\r\n", tmp); // 0x5 = 101 = AHB divided by 4
+	i2c_set_clock_frequency(I2C3, I2C_CR2_FREQ_10MHZ);
 	//i2c_peripheral_enable(I2C3);
 	
 	i2c_set_fast_mode(I2C3);
-	i2c_set_ccr(I2C3, 0x1e);
+	i2c_set_ccr(I2C3, 0x34);
 	i2c_set_trise(I2C3, 0x0b);
 	i2c_enable_ack(I2C3);
-	i2c_set_own_7bit_slave_address(I2C3, 0x32);
+	i2c_set_own_7bit_slave_address(I2C3, 0x4000);
 
 	i2c_peripheral_enable(I2C3);
 	console_puts("stmpe811 i2c init done!\n");
+
+	//gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
+	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
+	//	      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
 
 }
 
 
 void i2c_start(uint32_t i2c, uint8_t address, uint8_t mode) {
+	//console_puts("first start.. ");
+	//I2C_SR2(i2c);
 	i2c_send_start(i2c);
-	//while (!((I2C_SR1(i2c) & I2C_SR1_SB)));
+	while (!((I2C_SR1(i2c) & I2C_SR1_SB)));
 	//while (!((I2C_SR1(i2c) & I2C_SR1_SB)
 	//	& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
-
+	i2c_disable_ack(i2c);
 	//while (!((I2C_SR1(I2C1) & I2C_SR1_SB)
 	//	& (I2C_SR2(I2C1) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
+	//console_puts("OK!\n");
+
 	i2c_send_7bit_address(i2c, address, mode);
 	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR));
+	//while (!(I2C_SR1(I2C3) & I2C_SR1_ADDR));
+	//while (!(I2C_SR1(I2C3) & I2C_SR1_TxE));
+	//while (!(I2C_SR1(I2C3) & I2C_SR1_ADDR));
 
-	//I2C_SR2(i2c);
+	I2C_SR2(i2c);
 
 }
 
 
 void i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data) {
-	console_puts("initiating write\n");
+	//console_puts("initiating write\n");
 	i2c_start(i2c, address, I2C_WRITE);
 
 	i2c_send_data(i2c, reg);
@@ -85,15 +136,15 @@ void i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data) {
 	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
 
 	i2c_send_stop(i2c);
-	console_puts("end of write\n");
+	//console_puts("end of write\n");
 }
 
 
 uint8_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
-	console_puts("initiating read\n");
+	console_puts(".\n");
 	uint8_t data;
 
-	i2c_disable_ack(i2c);
+	i2c_enable_ack(i2c);
 	i2c_start(i2c, address, I2C_WRITE);
 
 	i2c_send_data(i2c, reg);
@@ -101,7 +152,7 @@ uint8_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
 
 	i2c_send_stop(i2c);
 
-	i2c_disable_ack(i2c);
+	i2c_enable_ack(i2c);
 	i2c_start(i2c, address, I2C_READ);
 
 	//I2C_SR2(i2c);	
@@ -110,13 +161,13 @@ uint8_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
 	data = i2c_get_data(i2c);
 
 	//i2c_send_stop(i2c);
-	console_puts("end of read\n");
+	//console_puts("end of read\n");
 	return data;
 }
 
 
 void i2c_reads(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t *data, uint8_t count) {
-	console_puts("initiating read\n");
+	console_puts(".");
 	uint8_t i;
 
 	i2c_enable_ack(i2c);
@@ -142,7 +193,7 @@ void i2c_reads(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t *data, uint8_
 	i2c_enable_ack(i2c);
 	data[i] = i2c_get_data(i2c);
 	//i2c_send_stop(i2c);
-	console_puts("end of read\n");
+	//console_puts("end of read\n");
 
 }
 
@@ -167,7 +218,7 @@ void stmpe811_reads(uint8_t reg, uint8_t *data, uint8_t count) {
 
 
 void stmpe811_reset(void) {
-	console_puts("initiating stmpe811 reset\n");
+	//console_puts("initiating stmpe811 reset\n");
 	stmpe811_write(STMPE811_SYS_CTRL1, 0x02);
 	msleep(5);
 	stmpe811_write(STMPE811_SYS_CTRL1, 0x00);
@@ -178,21 +229,30 @@ void stmpe811_reset(void) {
 stmpe811_state_t stmpe811_init(void) {
 	uint8_t data, data2[2], mode;
 
+	uint32_t reg = RCC_I2C3;
+
 	stmpe811_i2c_init();
 
-	i2c_reset(I2C3);
+	//i2c_reset(I2C3);
+	//rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
+	//rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);	
+	//rcc_periph_reset_pulse(I2C3);
 	console_puts("i2c reset done\n");
 
 	msleep(50);
 
 	stmpe811_reset();
-	console_puts("reset done\n");
+	//console_puts("reset done\n");
 
-	stmpe811_reads(STMPE811_CHIP_ID, data2, 2);
-	if ((data2[0] << 8 | data2[1]) != STMPE811_CHIP_ID_VALUE) {
-		return stmpe811_state_error;
-	}
+	//stmpe811_reads(STMPE811_CHIP_ID, data2, 2);
+	//if ((data2[0] << 8 | data2[1]) != STMPE811_CHIP_ID_VALUE) {
+	//	uint tmp01 = (data2[0] << 8 | data2[1]);
+	//	printf("STMPE811 DEVICE ID: 0x%08X\r\n", tmp01);
+	//	return stmpe811_state_error;
+	//}
 
+	rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
+	rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);
 	stmpe811_reset();
 
 	mode = stmpe811_read(STMPE811_SYS_CTRL2);
@@ -294,9 +354,13 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 		stmpe811_data->pressed = stmpe811_state_released;
 
 		stmpe811_reset_fifo();
+		console_puts("not pressed!\n");
 
 		return stmpe811_state_released;
 	}
+
+	console_puts("pressed!\n");
+	printf("VAL=0x%02X\n", val);
 
 	if (stmpe811_data->orientation == stmpe811_portrait_1) {
 		stmpe811_data->x = 239 - stmpe811_read_x(stmpe811_data->x);

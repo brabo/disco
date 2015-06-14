@@ -40,14 +40,15 @@ int main(void)
 
 	clock_setup();
 	console_setup(115200);
+	console_stdio_setup();
 	sdram_init();
 	lcd_spi_init();
 	console_puts("LCD Initialized\n");
 	console_puts("Should have a checker pattern, press any key to proceed\n");
 	msleep(2000);
 	(void) console_getc(1);
-/*	gfx_init(lcd_draw_pixel, 240, 320);
-	gfx_fillScreen(LCD_GREY);
+	gfx_init(lcd_draw_pixel, 240, 320);
+/*	gfx_fillScreen(LCD_GREY);
 	gfx_fillRoundRect(10, 10, 220, 220, 5, LCD_WHITE);
 	gfx_drawRoundRect(10, 10, 220, 220, 5, LCD_RED);
 	gfx_fillCircle(20, 250, 10, LCD_RED);
@@ -117,12 +118,12 @@ int main(void)
 	console_puts("Now it has a bit of structured graphics.\n");
 	console_puts("Press a key for some simple animation.\n");
 	msleep(2000); */
-	gfx_fillScreen(LCD_WHITE);
-	lcd_show_frame();
-	msleep(2000);
-	gfx_fillScreen(LCD_RED);
-	lcd_show_frame();
-	msleep(2000);
+	//gfx_fillScreen(LCD_WHITE);
+	//lcd_show_frame();
+	//msleep(2000);
+	//gfx_fillScreen(LCD_RED);
+	//lcd_show_frame();
+	//msleep(2000);
 	gfx_fillScreen(LCD_GREEN);
 	lcd_show_frame();
 	msleep(2000);
@@ -137,11 +138,11 @@ int main(void)
 		if( stmpe811_read_touch(&stmpe811_data) == stmpe811_state_pressed ) {
 			gfx_fillScreen(LCD_WHITE);
 			lcd_show_frame();
-			//console_puts("PRESSED!\n")
+			console_puts("PRESSED!\n");
 		} else {
 			gfx_fillScreen(LCD_BLACK);
 			lcd_show_frame();
-			console_puts("NOT PRESSED!");
+			console_puts("NOT PRESSED!\n");
 		}
 
 	}

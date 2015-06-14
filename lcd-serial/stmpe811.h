@@ -3,10 +3,11 @@
 
 /* Private defines */
 /* I2C address */
-#define STMPE811_ADDRESS				0x82
+#define STMPE811_ADDRESS				0x41
 
 /* STMPE811 Chip ID on reset */
-#define STMPE811_CHIP_ID_VALUE			0x0811	//Chip ID
+//#define STMPE811_CHIP_ID_VALUE			0x0811	//Chip ID
+#define STMPE811_CHIP_ID_VALUE	0x8300
 
 /* Registers */
 #define STMPE811_CHIP_ID				0x00	//STMPE811 Device identification
