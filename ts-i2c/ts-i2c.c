@@ -27,8 +27,6 @@
 #include "gfx.h"
 #include "stmpe811.h"
 
-/* Convert degrees to radians */
-#define d2r(d) ((d) * 6.2831853 / 360.0)
 
 /*
  * This is our example, the heavy lifing is actually in lcd-spi.c but
@@ -57,8 +55,11 @@ int main(void)
 	if( stmpe811_init() != stmpe811_state_ok ) {
 		console_puts("STMPE811 Error!");
 	}
+
 	stmpe811_data.orientation = stmpe811_portrait_2;
-	console_puts("Press on touchscreen please!\n");
+
+	console_puts("Press on touchscreen please!\n\n");
+
 	while(1) {
 		if( stmpe811_read_touch(&stmpe811_data) == stmpe811_state_pressed ) {
 			gfx_fillScreen(LCD_GREEN);

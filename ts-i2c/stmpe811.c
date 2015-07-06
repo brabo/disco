@@ -1,20 +1,21 @@
-/**
-Copyright (C) 2015 brabo <brabo.sil@gmail.com>
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.	
-**/
+/*
+ * This file is part of the libopencm3 project.
+ *
+ * Copyright (C) 2015 brabo <brabo.sil@gmail.com>
+ *
+ * This library is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -39,14 +40,16 @@ void stmpe811_i2c_init() {
 	gpio_set_output_options(GPIOC, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO9);
 	gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
 
-	i2c_peripheral_disable(I2C3);
+	i2c_peripheral_disable(I2C3); // disable i2c during setup
 	i2c_reset(I2C3);
 
 	i2c_set_fast_mode(I2C3);
 	i2c_set_clock_frequency(I2C3, I2C_CR2_FREQ_42MHZ);
 	i2c_set_ccr(I2C3, 35);
 	i2c_set_trise(I2C3, 43);
-	i2c_peripheral_enable(I2C3);
+
+	i2c_peripheral_enable(I2C3); // finally enable i2c
+
 	i2c_set_own_7bit_slave_address(I2C3, 0x00);
 }
 
@@ -90,8 +93,6 @@ uint8_t i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data) {
 
 
 uint32_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
-	console_puts(".");
-
 	while ((I2C_SR2(i2c) & I2C_SR2_BUSY));
 
 	i2c_start(i2c, address, I2C_WRITE);
@@ -113,34 +114,6 @@ uint32_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
 }
 
 
-void i2c_reads(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t *data, uint8_t count) {
-	uint8_t i;
-
-	i2c_enable_ack(i2c);
-	i2c_start(i2c, address, I2C_WRITE);
-
-	i2c_send_data(i2c, reg);
-	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
-
-	i2c_send_stop(i2c);
-
-	i2c_enable_ack(i2c);
-	i2c_start(i2c, address, I2C_READ);
-
-	for ( i = 0; i < count - 1; i++ ) {
-
-		i2c_disable_ack(i2c);
-		i2c_send_stop(i2c);
-
-		data[i] = i2c_get_data(i2c);
-	}
-	i++;
-
-	i2c_enable_ack(i2c);
-	data[i] = i2c_get_data(i2c);
-}
-
-
 void stmpe811_write(uint8_t reg, uint8_t data) {
 	i2c_write(I2C3, STMPE811_ADDRESS, reg, data); 
 }
@@ -150,13 +123,6 @@ uint32_t stmpe811_read(uint8_t reg) {
 	uint32_t data;
 	data = i2c_read(I2C3, STMPE811_ADDRESS, reg);
 	return data; 
-}
-
-
-void stmpe811_reads(uint8_t reg, uint8_t *data, uint8_t count) {
-	//uint8_t data;
-	i2c_reads(I2C3, STMPE811_ADDRESS, reg, data, count);
-	//return data; 
 }
 
 
@@ -282,12 +248,12 @@ void stmpe811_enable_interrupts(void) {
 
 
 stmpe811_state_t stmpe811_init(void) {
-	uint32_t mode;
-
 	stmpe811_i2c_init();
 	msleep(50);
 
 	stmpe811_reset();
+
+	/* start of the documented initialization sequence */
 	stmpe811_disable_ts();
 	stmpe811_disable_gpio();
 
@@ -316,6 +282,7 @@ stmpe811_state_t stmpe811_init(void) {
 	stmpe811_set_int_sta(0xFF);        // clear interrupt status
 
 	stmpe811_enable_interrupts();
+	/* end of the documented initialization sequence */
 
 	msleep(2);
 
@@ -393,7 +360,7 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 
 	stmpe811_data->x = stmpe811_read_x(stmpe811_data->x);
 	stmpe811_data->y = 319 - stmpe811_read_y(stmpe811_data->y);
-	printf("PRESSED @ 0x%04X X  --  0x%04X Y\n", stmpe811_data->x, stmpe811_data->y);
+	printf("PRESSED  @  0x%04X X  --  0x%04X Y\n", stmpe811_data->x, stmpe811_data->y);
 
 	stmpe811_reset_fifo();
 
