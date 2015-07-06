@@ -1,5 +1,5 @@
 /**
-Copyright (C) 2015 brabo
+Copyright (C) 2015 brabo <brabo.sil@gmail.com>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
