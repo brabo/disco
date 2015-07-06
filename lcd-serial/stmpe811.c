@@ -203,7 +203,7 @@ stmpe811_state_t stmpe811_init(void) {
 
 
 
-	mode = stmpe811_read(STMPE811_SYS_CTRL1); // disable ADC
+	mode = stmpe811_read(STMPE811_SYS_CTRL1); // enable soft-reset
 	printf("\n\nsys_ctrl1 == 0x%02X  --->  ", mode);
 	mode |= 0x02;
 	printf("0x%02X  ==  ", mode);
@@ -211,7 +211,7 @@ stmpe811_state_t stmpe811_init(void) {
 	mode = stmpe811_read(STMPE811_SYS_CTRL1);
 	printf("0x%02X\n\n", mode);
 
-	mode = stmpe811_read(STMPE811_SYS_CTRL1); // disable ADC
+	mode = stmpe811_read(STMPE811_SYS_CTRL1); // disable soft-reset
 	printf("sys_ctrl1 == 0x%02X  --->  ", mode);
 	mode &= ~(0x02);
 	printf("0x%02X  ==  ", mode);
@@ -221,7 +221,7 @@ stmpe811_state_t stmpe811_init(void) {
 
 
 
-	mode = stmpe811_read(STMPE811_SYS_CTRL2); // disable ADC
+	mode = stmpe811_read(STMPE811_SYS_CTRL2); // disable ts & gpio
 	printf("sys_ctrl2 == 0x%02X  --->  ", mode);
 	mode = 0x0C;
 	printf("0x%02X  ==  ", mode);
@@ -238,73 +238,73 @@ stmpe811_state_t stmpe811_init(void) {
 
 	mode = stmpe811_read(STMPE811_ADC_CTRL1);
 	printf("int_adc_ctrl1 == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_ADC_CTRL1, 0x49); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_ADC_CTRL1, 0x49); // set sample-time to 80 times number of clock and 12-bit adc
 	mode = stmpe811_read(STMPE811_ADC_CTRL1);
 	printf("0x49  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_ADC_CTRL2);
 	printf("int_adc_ctrl2 == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_ADC_CTRL2, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_ADC_CTRL2, 0x01); // set ADC clock speed to 3.25 MHz
 	mode = stmpe811_read(STMPE811_ADC_CTRL2);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_GPIO_AF);
 	printf("int_gpio_af == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_GPIO_AF, 0x00); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_GPIO_AF, 0x00); // set GPIO AF to function as ts/adc
 	mode = stmpe811_read(STMPE811_GPIO_AF);
 	printf("0x00  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_TSC_CFG);
 	printf("int_tsc_cfg == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_TSC_CFG, 0x9A); // touch-detection status (interrupt)
-	mode = stmpe811_read(STMPE811_TSC_CFG);
-	printf("0x9A  ==  0x%02X\n\n", mode);
+	stmpe811_write(STMPE811_TSC_CFG, 0x9A); // tsc cfg set to avg control = 4 samples
+	mode = stmpe811_read(STMPE811_TSC_CFG); //                touch detection delay = 500 microseconds
+	printf("0x9A  ==  0x%02X\n\n", mode);   //                panel driver settling time = 500 microcseconds
 
 	mode = stmpe811_read(STMPE811_FIFO_TH);
 	printf("int_fifo_th == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_FIFO_TH, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_FIFO_TH, 0x01); // set fifo threshold
 	mode = stmpe811_read(STMPE811_FIFO_TH);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_FIFO_STA);
 	printf("int_fifo_sta == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_FIFO_STA, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_FIFO_STA, 0x01); // set fifo status reset
 	mode = stmpe811_read(STMPE811_FIFO_STA);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_FIFO_STA);
 	printf("int_fifo_sta == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_FIFO_STA, 0x00); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_FIFO_STA, 0x00); // reset fifo status reset
 	mode = stmpe811_read(STMPE811_FIFO_STA);
 	printf("0x00  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_TSC_FRACTION_Z);
 	printf("int_tsc_fraction_z == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_TSC_FRACTION_Z, 0x07); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_TSC_FRACTION_Z, 0x07); // set fractional part to 7, whole part to 1
 	mode = stmpe811_read(STMPE811_TSC_FRACTION_Z);
 	printf("0x07  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_TSC_I_DRIVE);
 	printf("int_tsc_i_drive == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_TSC_I_DRIVE, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_TSC_I_DRIVE, 0x01); // set current limit value to 50 mA
 	mode = stmpe811_read(STMPE811_TSC_I_DRIVE);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_TSC_CTRL);
 	printf("int_tsc_ctrl == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_TSC_CTRL, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_TSC_CTRL, 0x01); // enable TSC (touchscreen clock)
 	mode = stmpe811_read(STMPE811_TSC_CTRL);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_INT_STA);
 	printf("int_int_sta == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_INT_STA, 0xFF); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_INT_STA, 0xFF); // clear everything
 	mode = stmpe811_read(STMPE811_INT_STA);
 	printf("0xFF  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_INT_CTRL);
 	printf("int_int_ctrl == 0x%02X  --->  ", mode);
-	stmpe811_write(STMPE811_INT_CTRL, 0x01); // touch-detection status (interrupt)
+	stmpe811_write(STMPE811_INT_CTRL, 0x01); // enable global interrupts
 	mode = stmpe811_read(STMPE811_INT_CTRL);
 	printf("0x01  ==  0x%02X\n\n", mode);
 
@@ -398,7 +398,7 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 	//console_puts("pressed!\n");
 	//printf("VAL=0x%02X\n", val);
 
-	if (stmpe811_data->orientation == stmpe811_portrait_1) {
+/*	if (stmpe811_data->orientation == stmpe811_portrait_1) {
 		stmpe811_data->x = 239 - stmpe811_read_x(stmpe811_data->x);
 		stmpe811_data->y = 319 - stmpe811_read_y(stmpe811_data->y);
 	} else if (stmpe811_data->orientation == stmpe811_portrait_2) {
@@ -410,7 +410,9 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 	} else if (stmpe811_data->orientation == stmpe811_landscape_2) {
 		stmpe811_data->y = 239 - stmpe811_read_x(stmpe811_data->y);
 		stmpe811_data->x = stmpe811_read_y(stmpe811_data->x);
-	}
+	} */
+	stmpe811_data->x = stmpe811_read_x(stmpe811_data->x);
+	stmpe811_data->y = 319 - stmpe811_read_y(stmpe811_data->y);
 	printf("coords:  0x%04X X - 0x%04X Y\n", stmpe811_data->x, stmpe811_data->y);
 
 	stmpe811_reset_fifo();
