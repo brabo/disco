@@ -63,6 +63,12 @@
 #define STMPE811_TEMP_TH				0x62	//Threshold for temperature controlled interrupt
 
 
+#define I2C_CR2_FREQ_MASK	0x3ff
+
+#define I2C_CCR_CCRMASK	0xfff
+
+#define I2C_TRISE_MASK	0x3f
+
 /**
  * @brief  Default I2C used, on STM32F429-Discovery board 
  */
@@ -125,14 +131,14 @@ typedef struct {
 
 
 void stmpe811_i2c_init(void);
-void i2c_start(uint32_t i2c, uint8_t address, uint8_t mode);
-void i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data);
-uint8_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg);
+uint8_t i2c_start(uint32_t i2c, uint8_t address, uint8_t mode);
+uint8_t i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data);
+uint32_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg);
 void i2c_reads(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t *data, uint8_t count);
 void stmpe811_write(uint8_t reg, uint8_t data);
-uint8_t stmpe811_read(uint8_t reg);
+uint32_t stmpe811_read(uint8_t reg);
 void stmpe811_reads(uint8_t reg, uint8_t *data, uint8_t count);
-void stmpe811_reset(void);
+void stmpe811_reset(uint8_t addr);
 stmpe811_state_t stmpe811_init(void);
 void stmpe811_reset_fifo(void);
 uint16_t stmpe811_read_x(uint16_t x);

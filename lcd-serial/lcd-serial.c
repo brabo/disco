@@ -142,7 +142,7 @@ int main(void)
 		} else {
 			gfx_fillScreen(LCD_BLACK);
 			lcd_show_frame();
-			console_puts("NOT PRESSED!\n");
+			//console_puts("NOT PRESSED!\n");
 		}
 
 	}

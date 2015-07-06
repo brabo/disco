@@ -30,139 +30,89 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 void stmpe811_i2c_init() {
 
 	rcc_periph_clock_enable(RCC_GPIOA);
-	//rcc_periph_clock_enable(RCC_I2C3);
-
-	//gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ,
-	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-	//	      GPIO8);
-
-
+	rcc_periph_clock_enable(RCC_GPIOC);
+	rcc_periph_clock_enable(RCC_I2C3);
+	
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO8);
 	gpio_set_output_options(GPIOA, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO8);
 	gpio_set_af(GPIOA, GPIO_AF4, GPIO8);
 
-	rcc_periph_clock_enable(RCC_GPIOC);
-
-	//gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ,
-	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-	//	      GPIO9);
-	uint32_t reg = RCC_I2C3;
-
 	gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
-	//gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
 	gpio_set_output_options(GPIOC, GPIO_OTYPE_OD, GPIO_OSPEED_50MHZ, GPIO9);
 	gpio_set_af(GPIOC, GPIO_AF4, GPIO9);
-//i2c_peripheral_disable(I2C1);
-	rcc_periph_clock_enable(RCC_I2C3);
-	rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
-	rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);
-	//rcc_periph_reset_pulse(I2C3);
+
 	i2c_peripheral_disable(I2C3);
-	uint tmp = 0;
+	i2c_reset(I2C3);
 
-	tmp = RCC_PLLCFGR & RCC_PLLCFGR_PLLSRC;
-	tmp = tmp >> 22;
-	printf("PLLSRC=%08X\r\n", tmp);
-	tmp = RCC_PLLCFGR & 0x3f; // & (0x2 << 0x6);
-	printf("PLLM=%08X\r\n", tmp);
-	tmp = RCC_PLLCFGR & 0x7FC0;
-	tmp = tmp >> 6;
-	printf("PLLN=%08X\r\n", tmp);
-	tmp = RCC_PLLCFGR & (0x2 << RCC_PLLCFGR_PLLP_SHIFT);
-	tmp = tmp >> RCC_PLLCFGR_PLLP_SHIFT;
-	printf("PLLP=%08X\r\n", tmp);
-	//RCC_CFGR_HPRE
-	tmp = RCC_CFGR & (0x2 << 0x2);
-	//tmp = tmp >> 2;
-	printf("SYSCLK=%08X\r\n", tmp);
-	tmp = RCC_CFGR & (RCC_CFGR_HPRE_MASK <<RCC_CFGR_HPRE_SHIFT);
-	tmp = tmp >> 4;
-	printf("HPRE=%08X\r\n", tmp); // 0x0 
-	tmp = RCC_CFGR & (RCC_CFGR_PPRE1_MASK <<RCC_CFGR_PPRE1_SHIFT);
-	tmp = tmp >> 10;
-	printf("PPRE1=%08X\r\n", tmp); // 0x5 = 101 = AHB divided by 4
-	i2c_set_clock_frequency(I2C3, I2C_CR2_FREQ_10MHZ);
-	//i2c_peripheral_enable(I2C3);
-	
 	i2c_set_fast_mode(I2C3);
-	i2c_set_ccr(I2C3, 0x34);
-	i2c_set_trise(I2C3, 0x0b);
-	i2c_enable_ack(I2C3);
-	i2c_set_own_7bit_slave_address(I2C3, 0x4000);
-
+	i2c_set_clock_frequency(I2C3, I2C_CR2_FREQ_42MHZ);
+	i2c_set_ccr(I2C3, 35);
+	i2c_set_trise(I2C3, 43);
 	i2c_peripheral_enable(I2C3);
-	console_puts("stmpe811 i2c init done!\n");
-
-	//gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ,
-	//	      GPIO_CNF_OUTPUT_ALTFN_OPENDRAIN,
-	//	      GPIO_I2C1_SCL | GPIO_I2C1_SDA);
-
+	i2c_set_own_7bit_slave_address(I2C3, 0x00);
 }
 
 
-void i2c_start(uint32_t i2c, uint8_t address, uint8_t mode) {
-	//console_puts("first start.. ");
-	//I2C_SR2(i2c);
+uint8_t i2c_start(uint32_t i2c, uint8_t address, uint8_t mode) {
+
 	i2c_send_start(i2c);
-	while (!((I2C_SR1(i2c) & I2C_SR1_SB)));
-	//while (!((I2C_SR1(i2c) & I2C_SR1_SB)
-	//	& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
-	i2c_disable_ack(i2c);
-	//while (!((I2C_SR1(I2C1) & I2C_SR1_SB)
-	//	& (I2C_SR2(I2C1) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
-
-	//console_puts("OK!\n");
+	/* Wait for master mode selected */
+	while (!((I2C_SR1(i2c) & I2C_SR1_SB)
+		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
 
 	i2c_send_7bit_address(i2c, address, mode);
-	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR));
-	//while (!(I2C_SR1(I2C3) & I2C_SR1_ADDR));
-	//while (!(I2C_SR1(I2C3) & I2C_SR1_TxE));
-	//while (!(I2C_SR1(I2C3) & I2C_SR1_ADDR));
 
-	I2C_SR2(i2c);
+	/* Waiting for address is transferred. */
+	while (!(I2C_SR1(i2c) & I2C_SR1_ADDR)) {
 
+	}
+
+	/* Cleaning ADDR condition sequence. */
+	uint32_t reg32 = I2C_SR2(i2c);
+	(void) reg32; /* unused */
+
+	return 0;
 }
 
 
-void i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data) {
-	//console_puts("initiating write\n");
+uint8_t i2c_write(uint32_t i2c, uint8_t address, uint8_t reg, uint8_t data) {
 	i2c_start(i2c, address, I2C_WRITE);
 
 	i2c_send_data(i2c, reg);
-	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
 
+	while (!(I2C_SR1(i2c) & (I2C_SR1_BTF)));
 	i2c_send_data(i2c, data);
-	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
+
+	while (!(I2C_SR1(i2c) & (I2C_SR1_BTF)));
 
 	i2c_send_stop(i2c);
-	//console_puts("end of write\n");
+
+	return 0;
 }
 
 
-uint8_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
-	console_puts(".\n");
-	uint8_t data;
+uint32_t i2c_read(uint32_t i2c, uint8_t address, uint8_t reg) {
+	console_puts(".");
 
-	i2c_enable_ack(i2c);
+	while ((I2C_SR2(i2c) & I2C_SR2_BUSY));
+
 	i2c_start(i2c, address, I2C_WRITE);
-
 	i2c_send_data(i2c, reg);
-	while (!(I2C_SR1(i2c) & I2C_SR1_TxE));
 
-	i2c_send_stop(i2c);
+	while (!(I2C_SR1(i2c) & (I2C_SR1_BTF)));
 
-	i2c_enable_ack(i2c);
 	i2c_start(i2c, address, I2C_READ);
 
-	//I2C_SR2(i2c);	
-	i2c_disable_ack(i2c);
 	i2c_send_stop(i2c);
-	data = i2c_get_data(i2c);
 
-	//i2c_send_stop(i2c);
-	//console_puts("end of read\n");
-	return data;
+	while (!(I2C_SR1(i2c) & I2C_SR1_RxNE));
+
+	uint32_t result = i2c_get_data(i2c);
+
+	I2C_SR1(i2c) &= ~I2C_SR1_AF;
+
+	return result;
 }
 
 
@@ -203,8 +153,8 @@ void stmpe811_write(uint8_t reg, uint8_t data) {
 }
 
 
-uint8_t stmpe811_read(uint8_t reg) {
-	uint8_t data;
+uint32_t stmpe811_read(uint8_t reg) {
+	uint32_t data;
 	data = i2c_read(I2C3, STMPE811_ADDRESS, reg);
 	return data; 
 }
@@ -217,67 +167,146 @@ void stmpe811_reads(uint8_t reg, uint8_t *data, uint8_t count) {
 }
 
 
-void stmpe811_reset(void) {
-	//console_puts("initiating stmpe811 reset\n");
-	stmpe811_write(STMPE811_SYS_CTRL1, 0x02);
-	msleep(5);
-	stmpe811_write(STMPE811_SYS_CTRL1, 0x00);
-	msleep(2);	
+void stmpe811_reset(uint8_t addr) {
+	uint8_t data;
+
+	data = i2c_read(I2C3, addr, STMPE811_SYS_CTRL1);
+
+	data |= 0x02;
+
+	i2c_write(I2C3, addr, STMPE811_SYS_CTRL1, data);
+
+	data &= ~(0x02);
+
+	i2c_write(I2C3, addr, STMPE811_SYS_CTRL1, data);
+	msleep(2);
 }
 
 
 stmpe811_state_t stmpe811_init(void) {
-	uint8_t data, data2[2], mode;
+	uint32_t data, data2[4], mode;
 
 	uint32_t reg = RCC_I2C3;
 
 	stmpe811_i2c_init();
 
-	//i2c_reset(I2C3);
-	//rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
-	//rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);	
-	//rcc_periph_reset_pulse(I2C3);
-	console_puts("i2c reset done\n");
 
 	msleep(50);
 
-	stmpe811_reset();
-	//console_puts("reset done\n");
+	//int i;
 
-	//stmpe811_reads(STMPE811_CHIP_ID, data2, 2);
-	//if ((data2[0] << 8 | data2[1]) != STMPE811_CHIP_ID_VALUE) {
-	//	uint tmp01 = (data2[0] << 8 | data2[1]);
-	//	printf("STMPE811 DEVICE ID: 0x%08X\r\n", tmp01);
-	//	return stmpe811_state_error;
+	//for( i = 0x0; i <= 0xFF; i++ ) {
+	//	data = i2c_read(I2C3, STMPE811_ADDRESS, i);
+	//	printf("\nADDR: 0x%04X  REG: 0x%04X  DATA : 0x%04X\n", STMPE811_ADDRESS, i, data);	
+	//	msleep(2);
 	//}
 
-	rcc_peripheral_reset(&reg, RCC_APB1RSTR_I2C3RST);
-	rcc_peripheral_clear_reset(&reg, RCC_APB1RSTR_I2C3RST);
-	stmpe811_reset();
 
-	mode = stmpe811_read(STMPE811_SYS_CTRL2);
-	mode &= ~(0x01);
-	stmpe811_write(STMPE811_SYS_CTRL2, mode);
-	mode = stmpe811_read(STMPE811_SYS_CTRL2);
+
+	mode = stmpe811_read(STMPE811_SYS_CTRL1); // disable ADC
+	printf("\n\nsys_ctrl1 == 0x%02X  --->  ", mode);
+	mode |= 0x02;
+	printf("0x%02X  ==  ", mode);
+	stmpe811_write(STMPE811_SYS_CTRL1, mode);
+	mode = stmpe811_read(STMPE811_SYS_CTRL1);
+	printf("0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_SYS_CTRL1); // disable ADC
+	printf("sys_ctrl1 == 0x%02X  --->  ", mode);
 	mode &= ~(0x02);
-	stmpe811_write(STMPE811_SYS_CTRL2, mode);
-	stmpe811_write(STMPE811_ADC_CTRL1, 0x49);
-	msleep(2);
+	printf("0x%02X  ==  ", mode);
+	stmpe811_write(STMPE811_SYS_CTRL1, mode);
+	mode = stmpe811_read(STMPE811_SYS_CTRL1);
+	printf("0x%02X\n\n", mode);
 
-	stmpe811_write(STMPE811_ADC_CTRL2, 0x01);
+
+
+	mode = stmpe811_read(STMPE811_SYS_CTRL2); // disable ADC
+	printf("sys_ctrl2 == 0x%02X  --->  ", mode);
+	mode = 0x0C;
+	printf("0x%02X  ==  ", mode);
+	stmpe811_write(STMPE811_SYS_CTRL2, mode);
+	mode = stmpe811_read(STMPE811_SYS_CTRL2);
+	printf("0x%02X\n\n", mode);
+
+
+	mode = stmpe811_read(STMPE811_INT_EN);
+	printf("int_en == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_INT_EN, 0x07); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_INT_EN);
+	printf("0x07  ==  0X%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_ADC_CTRL1);
+	printf("int_adc_ctrl1 == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_ADC_CTRL1, 0x49); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_ADC_CTRL1);
+	printf("0x49  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_ADC_CTRL2);
+	printf("int_adc_ctrl2 == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_ADC_CTRL2, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_ADC_CTRL2);
+	printf("0x01  ==  0x%02X\n\n", mode);
 
 	mode = stmpe811_read(STMPE811_GPIO_AF);
-	mode |= 0x1E;
-	stmpe811_write(STMPE811_GPIO_AF, mode);
+	printf("int_gpio_af == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_GPIO_AF, 0x00); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_GPIO_AF);
+	printf("0x00  ==  0x%02X\n\n", mode);
 
-	stmpe811_write(STMPE811_TSC_CFG, 0x9A);
-	stmpe811_write(STMPE811_FIFO_TH, 0x01);
-	stmpe811_write(STMPE811_FIFO_STA, 0x01);
-	stmpe811_write(STMPE811_FIFO_STA, 0x00);
-	stmpe811_write(STMPE811_TSC_FRACTION_Z, 0x01);
-	stmpe811_write(STMPE811_TSC_I_DRIVE, 0x01);
-	stmpe811_write(STMPE811_TSC_CTRL, 0x03);
-	stmpe811_write(STMPE811_INT_STA, 0xFF);
+	mode = stmpe811_read(STMPE811_TSC_CFG);
+	printf("int_tsc_cfg == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_TSC_CFG, 0x9A); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_TSC_CFG);
+	printf("0x9A  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_FIFO_TH);
+	printf("int_fifo_th == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_FIFO_TH, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_FIFO_TH);
+	printf("0x01  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_FIFO_STA);
+	printf("int_fifo_sta == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_FIFO_STA, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_FIFO_STA);
+	printf("0x01  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_FIFO_STA);
+	printf("int_fifo_sta == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_FIFO_STA, 0x00); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_FIFO_STA);
+	printf("0x00  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_TSC_FRACTION_Z);
+	printf("int_tsc_fraction_z == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_TSC_FRACTION_Z, 0x07); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_TSC_FRACTION_Z);
+	printf("0x07  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_TSC_I_DRIVE);
+	printf("int_tsc_i_drive == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_TSC_I_DRIVE, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_TSC_I_DRIVE);
+	printf("0x01  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_TSC_CTRL);
+	printf("int_tsc_ctrl == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_TSC_CTRL, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_TSC_CTRL);
+	printf("0x01  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_INT_STA);
+	printf("int_int_sta == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_INT_STA, 0xFF); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_INT_STA);
+	printf("0xFF  ==  0x%02X\n\n", mode);
+
+	mode = stmpe811_read(STMPE811_INT_CTRL);
+	printf("int_int_ctrl == 0x%02X  --->  ", mode);
+	stmpe811_write(STMPE811_INT_CTRL, 0x01); // touch-detection status (interrupt)
+	mode = stmpe811_read(STMPE811_INT_CTRL);
+	printf("0x01  ==  0x%02X\n\n", mode);
 
 	msleep(2);
 
@@ -286,8 +315,12 @@ stmpe811_state_t stmpe811_init(void) {
 
 
 void stmpe811_reset_fifo(void) {
-	stmpe811_write(STMPE811_FIFO_STA, 0x01);
-	stmpe811_write(STMPE811_FIFO_STA, 0x00);
+	uint8_t sta;
+	sta = stmpe811_read(STMPE811_FIFO_STA);
+	sta |= 0x01;
+	stmpe811_write(STMPE811_FIFO_STA, sta);
+	sta &= ~(0x01);
+	stmpe811_write(STMPE811_FIFO_STA, sta);
 }
 
 
@@ -349,18 +382,21 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 
 	stmpe811_data->last_pressed = stmpe811_data->pressed;
 
+	//console_puts("read val..");
 	val = stmpe811_read(STMPE811_TSC_CTRL);
+	//console_puts("OK!\n");
+	//printf("VAL=0x%02X\n", val);
 	if(( val & 0x80 ) == 0 ) {
 		stmpe811_data->pressed = stmpe811_state_released;
 
 		stmpe811_reset_fifo();
-		console_puts("not pressed!\n");
+		//console_puts("not pressed!\n");
 
 		return stmpe811_state_released;
 	}
 
-	console_puts("pressed!\n");
-	printf("VAL=0x%02X\n", val);
+	//console_puts("pressed!\n");
+	//printf("VAL=0x%02X\n", val);
 
 	if (stmpe811_data->orientation == stmpe811_portrait_1) {
 		stmpe811_data->x = 239 - stmpe811_read_x(stmpe811_data->x);
@@ -375,6 +411,7 @@ stmpe811_state_t stmpe811_read_touch(stmpe811_t *stmpe811_data) {
 		stmpe811_data->y = 239 - stmpe811_read_x(stmpe811_data->y);
 		stmpe811_data->x = stmpe811_read_y(stmpe811_data->x);
 	}
+	printf("coords:  0x%04X X - 0x%04X Y\n", stmpe811_data->x, stmpe811_data->y);
 
 	stmpe811_reset_fifo();
 
