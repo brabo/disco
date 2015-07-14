@@ -1,0 +1,7 @@
+spi-mems.c:34: WARNING: externs should be avoided in .c files
+spi-mems.c:35: WARNING: externs should be avoided in .c files
+spi-mems.c:36: WARNING: externs should be avoided in .c files
+spi-mems.c:37: WARNING: externs should be avoided in .c files
+spi-mems.c:58: WARNING: externs should be avoided in .c files
+spi-mems.c:177: WARNING: externs should be avoided in .c files
+total: 0 errors, 6 warnings, 308 lines checked

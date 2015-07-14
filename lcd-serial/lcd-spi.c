@@ -25,7 +25,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/cm3/nvic.h>
-//#include "console.h"
+#include "console.h"
 #include "clock.h"
 #include "sdram.h"
 #include "lcd-spi.h"
@@ -201,26 +201,26 @@ initialize_display(const struct tft_command cmds[])
 	 * that changes the pointer we send to the command function.
 	 */
 	while (cmds[i].cmd) {
-		//console_puts("CMD: ");
+		console_puts("CMD: ");
 		print_hex(cmds[i].cmd);
-		//console_puts(", ");
+		console_puts(", ");
 		if (cmds[i].n_args) {
-			//console_puts("ARGS: ");
+			console_puts("ARGS: ");
 			for (j = 0; j < cmds[i].n_args; j++) {
 				print_hex(cmd_args[arg_offset+j]);
-				//console_puts(", ");
+				console_puts(", ");
 			}
 		}
-		//console_puts("DELAY: ");
+		console_puts("DELAY: ");
 		print_decimal(cmds[i].delay);
-		//console_puts("ms\n");
+		console_puts("ms\n");
 
 		lcd_command(cmds[i].cmd, cmds[i].delay, cmds[i].n_args,
 			&cmd_args[arg_offset]);
 		arg_offset += cmds[i].n_args;
 		i++;
 	}
-	//console_puts("Done.\n");
+	console_puts("Done.\n");
 }
 
 /* prototype for test_image */
@@ -231,7 +231,7 @@ static void test_image(void);
  *   - How quickly can I write a full frame?
  *      * Take the bits sent (16 * width * height)
  *        and divide by the  baud rate (10.25Mhz)
- *      * Tests in main.c show that yes, it taks 74ms.
+ *      * Tests in main.c show that yes, it takes 74ms.
  *
  * Create non-random data in the frame buffer. In our case
  * a black background and a grid 16 pixels x 16 pixels of
@@ -290,7 +290,7 @@ void lcd_show_frame(void)
 /*
  * void lcd_spi_init(void)
  *
- * Initialize the SPI port, and the through that port
+ * Initialize the SPI port, and then through that port
  * initialize the LCD controller. Note that this code
  * will expect to be able to draw into the SDRAM on
  * the board, so the sdram much be initialized before
@@ -335,15 +335,15 @@ lcd_spi_init(void)
 	spi_enable(LCD_SPI);
 
 	/* Set up the display */
-	//console_puts("Initialize the display.\n");
+	console_puts("Initialize the display.\n");
 	initialize_display(initialization);
 
 	/* create a test image */
-	//console_puts("Generating Test Image\n");
+	console_puts("Generating Test Image\n");
 	test_image();
 
 	/* display it on the LCD */
-	//console_puts("And ... voila\n");
+	console_puts("And ... voila\n");
 	lcd_show_frame();
 }
 
@@ -372,11 +372,11 @@ print_decimal(int num)
 	} while (num != 0);
 	ndx--;
 	if (is_signed != 0) {
-		//console_putc('-');
+		console_putc('-');
 		len++;
 	}
 	while (buf[ndx] != '\000') {
-		//console_putc(buf[ndx--]);
+		console_putc(buf[ndx--]);
 		len++;
 	}
 	return len; /* number of characters printed */
@@ -400,10 +400,10 @@ static int print_hex(int v)
 		v = (v >> 4) & 0x0fffffff;
 	} while (v != 0);
 	ndx--;
-	//console_puts("0x");
+	console_puts("0x");
 	len = 2;
 	while (buf[ndx] != '\000') {
-		//console_putc(buf[ndx--]);
+		console_putc(buf[ndx--]);
 		len++;
 	}
 	return len; /* number of characters printed */

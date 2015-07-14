@@ -11,3 +11,4 @@
 *.map
 examples/
 backup/
+tmp/

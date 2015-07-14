@@ -1,0 +1,2 @@
+clock.c:33: WARNING: Use of volatile is usually wrong: see Documentation/volatile-considered-harmful.txt
+total: 0 errors, 1 warnings, 73 lines checked

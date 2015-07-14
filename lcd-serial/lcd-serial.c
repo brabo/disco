@@ -2,6 +2,7 @@
  * This file is part of the libopencm3 project.
  *
  * Copyright (C) 2014 Chuck McManis <cmcmanis@mcmanis.com>
+ *               2015 brabo <brabo.sil@gmail.com>
  *
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +19,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <math.h>
 #include "clock.h"
 #include "console.h"
@@ -29,45 +31,102 @@
 /* Convert degrees to radians */
 #define d2r(d) ((d) * 6.2831853 / 360.0)
 
+
 /*
  * This is our example, the heavy lifing is actually in lcd-spi.c but
  * this drives that code.
  */
 int main(void)
 {
-	stmpe811_t stmpe811_data;
+	int p1, p2, p3;
+	uint32_t time1;
 
 	clock_setup();
-
 	console_setup(115200);
-	console_stdio_setup();
-
 	sdram_init();
-
 	lcd_spi_init();
-
+	console_puts("LCD Initialized\n");
+	console_puts("Should have a checker pattern, press any key to proceed\n");
+	msleep(2000);
+/*	(void) console_getc(1); */
 	gfx_init(lcd_draw_pixel, 240, 320);
-	gfx_fillScreen(LCD_GREEN);
+	gfx_fill_screen(LCD_GREY);
+	gfx_fill_round_rect(10, 10, 220, 220, 5, LCD_WHITE);
+	gfx_draw_round_rect(10, 10, 220, 220, 5, LCD_RED);
+	gfx_fill_circle(20, 250, 10, LCD_RED);
+	gfx_fill_circle(120, 250, 10, LCD_GREEN);
+	gfx_fill_circle(220, 250, 10, LCD_BLUE);
+	gfx_set_text_size(2);
+	gfx_set_cursor(15, 25);
+	gfx_puts("STM32F4-DISCO");
+	gfx_set_text_size(1);
+	gfx_set_cursor(15, 49);
+	gfx_puts("Simple example to put some");
+	gfx_set_cursor(15, 60);
+	gfx_puts("stuff on the LCD screen.");
 	lcd_show_frame();
+	console_puts("Now it has a bit of structured graphics.\n");
+	console_puts("Press a key for some simple animation.\n");
+	msleep(2000);
+/*	(void) console_getc(1); */
+	gfx_set_text_color(LCD_YELLOW, LCD_BLACK);
+	gfx_set_text_size(3);
+	p1 = 0;
+	p2 = 45;
+	p3 = 90;
+	time1 = mtime();
+	time1 = time1 + 15000;
+	while (1) {
+		gfx_fill_screen(LCD_BLACK);
+		gfx_set_cursor(15, 36);
+		gfx_puts("PLANETS!");
+		gfx_fill_circle(120, 160, 40, LCD_YELLOW);
+		gfx_draw_circle(120, 160, 55, LCD_GREY);
+		gfx_draw_circle(120, 160, 75, LCD_GREY);
+		gfx_draw_circle(120, 160, 100, LCD_GREY);
 
-	console_puts("\n\nLCD Initialized, press any key to proceed\n");
-	(void) console_getc(1);
-
-	if( stmpe811_init() != stmpe811_state_ok ) {
-		console_puts("STMPE811 Error!");
+		gfx_fill_circle(120 + (sin(d2r(p1)) * 55),
+			       160 + (cos(d2r(p1)) * 55), 5, LCD_RED);
+		gfx_fill_circle(120 + (sin(d2r(p2)) * 75),
+			       160 + (cos(d2r(p2)) * 75), 10, LCD_WHITE);
+		gfx_fill_circle(120 + (sin(d2r(p3)) * 100),
+			       160 + (cos(d2r(p3)) * 100), 8, LCD_BLUE);
+		p1 = (p1 + 3) % 360;
+		p2 = (p2 + 2) % 360;
+		p3 = (p3 + 1) % 360;
+		lcd_show_frame();
+		uint32_t time2 = mtime();
+		if (time1 < time2) {
+			break;
+		}
 	}
-	stmpe811_data.orientation = stmpe811_portrait_2;
-	console_puts("Press on touchscreen please!\n");
-	while(1) {
-		if( stmpe811_read_touch(&stmpe811_data) == stmpe811_state_pressed ) {
-			gfx_fillScreen(LCD_GREEN);
+
+	/* First we initialize the touchscreen driver (stmpe811) */
+	stmpe811_t stmpe811_data;
+	if (stmpe811_init() != stmpe811_state_ok) {
+		console_puts("\nSTMPE811 error!\n");
+	}
+
+	/*
+	 * Loop and read for touch (pressed state).
+	 * If pressed, turn screen green and output coordinates over console.
+	 * Otherwise, turn screen red.
+	 */
+	while (1) {
+		if (stmpe811_read_touch(&stmpe811_data) == stmpe811_state_pressed) {
+			gfx_fill_screen(LCD_GREEN);
 			lcd_show_frame();
+
+			/*
+			 * To have the correct X/Y coordinates,
+			 * calibration should be performed.
+			 */
+			stmpe811_data.x = stmpe811_read_x(stmpe811_data.x);
+			stmpe811_data.y = stmpe811_read_y(stmpe811_data.y);
+			printf("PRESSED  @  0x%04X X  --  0x%04X Y\n", stmpe811_data.x, stmpe811_data.y);
 		} else {
-			gfx_fillScreen(LCD_RED);
+			gfx_fill_screen(LCD_RED);
 			lcd_show_frame();
 		}
-
 	}
-
-
 }

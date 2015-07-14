@@ -1,0 +1,4 @@
+gfx.c:275: WARNING: line over 80 characters
+gfx.c:292: WARNING: line over 80 characters
+gfx.c:293: WARNING: line over 80 characters
+total: 0 errors, 3 warnings, 544 lines checked

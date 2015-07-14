@@ -1,0 +1,2 @@
+sdram.c:122: WARNING: msleep < 20ms can sleep for up to 20ms; see Documentation/timers/timers-howto.txt
+total: 0 errors, 1 warnings, 138 lines checked

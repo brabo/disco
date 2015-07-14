@@ -6,7 +6,7 @@ and shows some sample screens. It uses some graphics code
 that was inspired by AdaFruit graphics library. Not that
 a lot of it is used but once the display was "on" it was
 something to use to put something other than straight
-lines on it :-). 
+lines on it :-).
 
 It is a bit more complex because there are a lot of things
 going on at the same time. First the display is connected
@@ -29,5 +29,13 @@ Pressing any key again, will bring up a display that says
 to scale :-) to give you a feel for the "speed" of animation
 when you're dumping the entire screen through the SPI port
 each time to update the display. The next example uses
-the TFT interface of the chip to load the data into the 
+the TFT interface of the chip to load the data into the
 display.
+
+After ~15 seconds, this animation will stop and the screen
+will turn red. At this point, the touchscreen is active.
+Pressing on the touchscreen will make the screen go green,
+and X/Y coordinates will be output on the console. Note that
+these values are not yet 100% correct, proper calibration of
+the touchscreen should be performed.
+Releasing turns it back to red.

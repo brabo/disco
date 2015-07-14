@@ -1,0 +1,4 @@
+lcd-serial.c:49: WARNING: line over 80 characters
+lcd-serial.c:116: WARNING: line over 80 characters
+lcd-serial.c:126: WARNING: line over 80 characters
+total: 0 errors, 3 warnings, 132 lines checked
